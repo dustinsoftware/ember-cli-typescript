@@ -10,6 +10,7 @@ import TypecheckMiddleware from './lib/typechecking/middleware';
 import { Application } from 'express';
 import walkSync from 'walk-sync';
 import fs from 'fs-extra';
+import path from 'path';
 
 export const ADDON_NAME = 'ember-cli-typescript';
 
@@ -104,6 +105,28 @@ export default addon({
           'your TypeScript files may not be transpiled correctly.'
       );
     }
+  },
+
+  urlsForPrember(distDir: string) {
+    try {
+      const addonDocsConfig = JSON.parse(fs.readFileSync(path.join(distDir, 'docs/ember-cli-typescript.json')).toString()) as {
+        data: {
+          attributes: {
+            navigationIndex: {
+              items: {
+                path: string
+              }[]
+            }[]
+          }
+        }
+      };
+      
+      return addonDocsConfig.data.attributes.navigationIndex
+        .reduce((acc: string[], x) => (acc.concat(x.items.map(y => y.path))), [])
+    } catch (e) {
+      console.info('Could not parse addon docs. Pre-rendering only application root. ' + e);
+    }
+    return ['/'];
   },
 
   _checkEmberCLIVersion() {
